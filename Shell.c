@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
 
         char *args[256];
         char *token = strtok(escritura_comando, " ");
+
         int i = 0;
         while (token != NULL)
         {
@@ -23,6 +24,9 @@ int main(int argc, char *argv[])
             i++;
         }
         args[i] = NULL;
+
+        if (strcmp(args[0], "exit") == 0)
+            break;
 
         int pid = fork();
         if (pid < 0)
@@ -33,16 +37,6 @@ int main(int argc, char *argv[])
         else if (pid == 0)
         {
             execvp(args[0], args);
-            /*
-            // Este ejemplo es de una ayudantia, pero se puede ocupar como base para poder avanzar
-            char *myargs[4]; // arreglo para almacenar el programa y sus argumentos
-            myargs[0] = strdup("wc");
-            myargs[1] = strdup("-l");
-            myargs[2] = strdup("fork0.c");
-            myargs[3] = NULL;
-            execvp(myargs[0], myargs); // cambia imagen de hijo a wc
-            printf("Aqui llegaría solo ante el error de execvp\n");
-            */
         }
         else
         { // padre
