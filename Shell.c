@@ -25,6 +25,11 @@ int main(int argc, char *argv[])
         }
         args[i] = NULL;
 
+        if (args[0] == NULL)
+        {
+            continue; // Si no se ingresó nada, vuelve al inicio del bucle.
+        }
+
         if (strcmp(args[0], "exit") == 0)
             break;
 
