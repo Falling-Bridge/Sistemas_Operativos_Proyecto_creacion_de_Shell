@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include "Comando_personalizado.h"
 
 void ejecutar_pipes(char *comandos[], int num_comandos);
 
@@ -14,97 +15,127 @@ int main(int argc, char *argv[])
     {
 
         printf("\n$ ");
-        fflush(stdout); //para mostrar el prompt
+        fflush(stdout); // para mostrar el prompt
 
-        if(!fgets(escritura_comando, 256, stdin)){
+        if (!fgets(escritura_comando, 256, stdin))
+        {
             break;
         }
 
         escritura_comando[strcspn(escritura_comando, "\n")] = 0;
 
-        if(strlen(escritura_comando) == 0) {
+        if (strlen(escritura_comando) == 0)
+        {
             continue;
         }
 
-        //para detectar si hay pipes
+        // para detectar si hay pipes
         char *pipe_token = strtok(escritura_comando, "|");
-        char *comandos[10]; //10 comandos pipe máximo.
+        char *comandos[10]; // 10 comandos pipe máximo.
         int num_comandos = 0;
 
-        while(pipe_token != NULL && num_comandos<10) {
-            while(*pipe_token == ' ')
+        while (pipe_token != NULL && num_comandos < 10)
+        {
+            while (*pipe_token == ' ')
                 pipe_token++;
-            char *end = pipe_token + strlen(pipe_token)-1;
-            while(end>pipe_token && *end == ' ')
+            char *end = pipe_token + strlen(pipe_token) - 1;
+            while (end > pipe_token && *end == ' ')
                 end--;
-            *(end+1) = '\0';
+            *(end + 1) = '\0';
 
             comandos[num_comandos++] = pipe_token;
             pipe_token = strtok(NULL, "|");
         }
-        //comando exit
-        if(strcmp(comandos[0], "exit")==0) {
+        // comando exit
+        if (strcmp(comandos[0], "exit") == 0)
+        {
             break;
         }
 
-        //Para saber si ejecutar comando simple o pipes
-        if(num_comandos == 1) {
+        /*
+        BAJO CONSTRUCCION
+        if (strcmp(comandos[0], "miprof") == 0)
+        {
+            comando_miprof(comando)
+            continue;
+        }
+        */
+
+        // Para saber si ejecutar comando simple o pipes
+        if (num_comandos == 1)
+        {
             char *args[256];
             char *token = strtok(comandos[0], " ");
-            int i=0;
+            int i = 0;
 
-            while(token != NULL) {
+            while (token != NULL)
+            {
                 args[i] = token;
                 token = strtok(NULL, " ");
                 i++;
             }
             args[i] = NULL;
-            if (args[0] == NULL) {
+            if (args[0] == NULL)
+            {
                 continue;
             }
             pid_t pid = fork();
-            if(pid<0) {
+            if (pid < 0)
+            {
                 printf("Error en fork");
                 exit(1);
-            } else if (pid==0) {
+            }
+            else if (pid == 0)
+            {
                 execvp(args[0], args);
                 perror("execvp error");
                 exit(1);
-            } else {
+            }
+            else
+            {
                 wait(NULL);
             }
-        } else {
+        }
+        else
+        {
             ejecutar_pipes(comandos, num_comandos);
         }
     }
-       
+
     return 0;
 }
 
-void ejecutar_pipes(char *comandos[], int num_comandos) {
+void ejecutar_pipes(char *comandos[], int num_comandos)
+{
     int i;
-    int in_fd = 0; //stdin
+    int in_fd = 0; // stdin
     int fd[2];
     pid_t pid;
 
-    for (i=0; i<num_comandos; i++) {
-        //crear pipes para todo menos para el último comando
-        if (i<num_comandos - 1) {
-            if (pipe(fd) < 0) {
+    for (i = 0; i < num_comandos; i++)
+    {
+        // crear pipes para todo menos para el último comando
+        if (i < num_comandos - 1)
+        {
+            if (pipe(fd) < 0)
+            {
                 perror("error al ejecutar pipe");
                 return;
             }
         }
 
         pid = fork();
-        if(pid == 0) { //hijo
-            if (i>0) {
-                //Redirige entrada desde el pipe anterior
+        if (pid == 0)
+        { // hijo
+            if (i > 0)
+            {
+                // Redirige entrada desde el pipe anterior
                 dup2(in_fd, STDIN_FILENO);
                 close(in_fd);
             }
-            if(i<num_comandos - 1) {
-                //Redirige entrada al pipe siguiente
+            if (i < num_comandos - 1)
+            {
+                // Redirige entrada al pipe siguiente
                 dup2(fd[1], STDOUT_FILENO);
                 close(fd[1]);
                 close(fd[0]);
@@ -113,7 +144,8 @@ void ejecutar_pipes(char *comandos[], int num_comandos) {
             char *args[256];
             char *token = strtok(comandos[i], " ");
             int j = 0;
-            while(token != NULL) {
+            while (token != NULL)
+            {
                 args[j++] = token;
                 token = strtok(NULL, " ");
             }
@@ -122,22 +154,29 @@ void ejecutar_pipes(char *comandos[], int num_comandos) {
             execvp(args[0], args);
             perror("error execvp");
             exit(1);
-        } else if (pid > 0) { //PADRE
-            if(i>0) {
+        }
+        else if (pid > 0)
+        { // PADRE
+            if (i > 0)
+            {
                 close(in_fd);
             }
-            if(i<num_comandos - 1) {
+            if (i < num_comandos - 1)
+            {
                 close(fd[1]);
-                in_fd = fd[0]; //entrada para el proximo cmdo
+                in_fd = fd[0]; // entrada para el proximo cmdo
             }
-        } else {
+        }
+        else
+        {
             perror("Error en el fork");
             return;
         }
     }
 
-    //para esperar todos los procesos hijos:
-    for (i=0; i<num_comandos; i++) {
+    // para esperar todos los procesos hijos:
+    for (i = 0; i < num_comandos; i++)
+    {
         wait(NULL);
     }
 }
