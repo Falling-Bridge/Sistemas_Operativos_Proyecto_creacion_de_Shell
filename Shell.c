@@ -52,14 +52,13 @@ int main(int argc, char *argv[])
             break;
         }
 
-        /*
-        BAJO CONSTRUCCION
+    
         if (strcmp(comandos[0], "miprof") == 0)
         {
-            comando_miprof(comando)
+            manejar_miprof(comandos);
             continue;
         }
-        */
+    
 
         // Para saber si ejecutar comando simple o pipes
         if (num_comandos == 1)
