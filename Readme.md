@@ -18,9 +18,51 @@ Algunas de sus características principales son:
  * Manejo de procesos hijos con fork() y execvp().
  * Parseo de comandos con manejo de espacios.
 
+## Estructura del proyecto
+```
+.
+├── Readme.md
+├── include
+│   ├── Comando_personalizado.h
+│   ├── Comando_pipes.h
+│   ├── librerias.h
+│   └── navegacion.h
+├── makefile
+├── obj
+├── shell
+└── src
+    ├── Comando_personalizado.c
+    ├── Comando_pipes.c
+    ├── main.c
+    └── navegacion.c
+```
+
+
 ## Compilación, ejecución y uso.
-#### Compilación básica
-Para compilación "gcc Shell.c", para ejecución "./a.out" 
+#### Compilación (sin Makefile)
+Para compilación 
+```
+gcc -Wall -Wextra -Iinclude src/main.c src/navegacion.c src/Comando_personalizado.c src/Comando_pipes.c -o main -lreadline
+```
+Para ejecución 
+```
+/main
+```
+
+#### Compilación (Con Makefile)
+Solo para compilación
+```
+make compile
+```
+Solo para ejecución
+```
+make run
+```
+Para eliminar el ejecutable generado y los archivos de tipo .o en la carpeta 'obj'
+```
+make clean
+```
+ 
 #### Manual de Uso.
 - Sintaxis Básica: $ [argumento1][argumento2] , algunos ejemplos de uso:
   * $ ls (navegación de archivos)
