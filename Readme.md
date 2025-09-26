@@ -9,7 +9,7 @@
 | Vicente Ignacio Miranda Gómez | [@VicenteM32](https://github.com/VicenteM32) | 2023412848 |
 | Eduardo Alfonso Mora Hernández| [@Eddomora](https://github.com/Eddomora) | 2023403989 |
 
-### Introducción.
+## Introducción.
 En el presente proyecto hacemos uso de nuestros conocimientos aprendidos en Sistemas Operativos para la creación de una shell (intérprete de comandos) básica programada en C para Linux.
 Algunas de sus características principales son:
  * Ejecuta comandos simples.
@@ -18,7 +18,7 @@ Algunas de sus características principales son:
  * Manejo de procesos hijos con fork() y execvp().
  * Parseo de comandos con manejo de espacios.
 
-### Compilación, ejecución y uso.
+## Compilación, ejecución y uso.
 #### Compilación básica
 Para compilación "gcc Shell.c", para ejecución "./a.out" 
 #### Manual de Uso.
@@ -31,7 +31,7 @@ Para compilación "gcc Shell.c", para ejecución "./a.out"
   * $ ls | grep .c
   * $ ps -aux | sort -nr -k 4 | head -20
 
-### Implementación de Funciones.
+## Implementación de Funciones.
 #### Función main(): Flujo principal
  * Contiene el bucle principal de la shell.
  * Lectura de entrada, captura comandos con fgets.
