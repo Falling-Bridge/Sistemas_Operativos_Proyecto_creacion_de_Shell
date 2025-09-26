@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -Iinclude
 LDFLAGS = -lreadline
 SRCDIR = src
-SOURCES = $(SRCDIR)/Shell.c $(SRCDIR)/navegacion.c $(SRCDIR)/Comando_personalizado.c
+SOURCES = $(SRCDIR)/Shell.c $(SRCDIR)/navegacion.c $(SRCDIR)/Comando_personalizado.c $(SRCDIR)/Comando_pipes.c
 TARGET = shell
 
 # Regla principal: compilar
