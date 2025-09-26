@@ -1,7 +1,9 @@
 #include "../include/navegacion.h"
 #include "../include/Comando_personalizado.h"
+#include "../include/Comando_pipes.h"  // Declaración de ejecutar_pipes
 
-/* Shell.c
+/*
+ * Shell.c
  * Programa principal del shell educativo.
  * - Inicializa readline y autocompletado
  * - Lee líneas de comando y las ejecuta
@@ -9,12 +11,10 @@
  * - Ejecución simple con fork/exec y soporte para pipes
  */
 
-void ejecutar_pipes(char *comandos[], int num_comandos);
-
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     (void)argc; (void)argv;
     char escritura_comando[256], comando_copia[256], cwd[1024], prompt[1100];
+
     /* Configurar autocompletado */
     rl_attempted_completion_function = my_completion;
     rl_bind_key('\t', rl_menu_complete);
@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
             perror("getcwd error");
             strcpy(prompt, "$ ");
         }
+
         char *input = readline(prompt);
         if (!input) break; /* EOF */
         if (strlen(input) > 0) add_history(input);
@@ -40,8 +41,10 @@ int main(int argc, char *argv[])
 
         /* Delegar la navegación a navegacion.c; si retorna 1 ya se ejecutó */
         if (manejar_navegacion_de_linea(escritura_comando)) continue;
-
-        if (strlen(escritura_comando) == 0) { fflush(stdout); continue; }
+        if (strlen(escritura_comando) == 0) { 
+            fflush(stdout); 
+            continue; 
+        }
 
         /* Separar por pipes y limpiar espacios alrededor */
         strncpy(comando_copia, escritura_comando, sizeof(comando_copia) - 1);
@@ -62,98 +65,29 @@ int main(int argc, char *argv[])
 
         /* Ejecutar comando simple o pipeline */
         if (num_comandos == 1) {
-            /* reconstruir argv desde copia original */
-            char *args_original[256]; char *token = strtok(comando_copia, " "); int i = 0;
-            while (token != NULL && i < 255) { args_original[i++] = token; token = strtok(NULL, " "); }
+            char *args_original[256]; 
+            char *token = strtok(comando_copia, " "); 
+            int i = 0;
+            while (token != NULL && i < 255) { 
+                args_original[i++] = token; 
+                token = strtok(NULL, " "); 
+            }
             args_original[i] = NULL;
             if (args_original[0] == NULL) continue;
 
             pid_t pid = fork();
-            if (pid < 0)
-            {
+            if (pid < 0){
                 perror("fork error");
                 exit(1);
             }
-            else if (pid == 0)
-            {
+            else if (pid == 0) {
                 execvp(args_original[0], args_original);
                 perror("execvp error");
                 exit(1);
             }
-            else
-                wait(NULL);
-        }
-        else
-            ejecutar_pipes(comandos, num_comandos);
-        }
+            else wait(NULL);
+        } 
+        else ejecutar_pipes(comandos, num_comandos);
     }
-
     return 0;
-}
-
-/* ejecutar_pipes
- *  - comandos: array de cadenas (cada elemento es un comando con sus args separados por espacios)
- *  - num_comandos: cantidad de elementos válidos en `comandos`
- *
- * Implementa la creación de pipes y procesos para ejecutar una tubería de comandos.
- */
-void ejecutar_pipes(char *comandos[], int num_comandos)
-{
-    int i, in_fd = 0, fd[2];
-    pid_t pid;
-    for (i = 0; i < num_comandos; i++)
-    {
-        if (i < num_comandos - 1)
-            if (pipe(fd) < 0)
-            {
-                perror("pipe error");
-                return;
-            }
-        pid = fork();
-        if (pid == 0)
-        {
-            if (i > 0)
-            {
-                dup2(in_fd, STDIN_FILENO);
-                close(in_fd);
-            }
-            if (i < num_comandos - 1)
-            {
-                dup2(fd[1], STDOUT_FILENO);
-                close(fd[1]);
-                close(fd[0]);
-            }
-            char *args[256];
-            char cmdcpy[256];
-            strncpy(cmdcpy, comandos[i], sizeof(cmdcpy) - 1);
-            cmdcpy[sizeof(cmdcpy) - 1] = '\0';
-            char *tok = strtok(cmdcpy, " ");
-            int j = 0;
-            while (tok != NULL && j < 255)
-            {
-                args[j++] = tok;
-                tok = strtok(NULL, " ");
-            }
-            args[j] = NULL;
-            execvp(args[0], args);
-            perror("execvp error");
-            exit(1);
-        }
-        else if (pid > 0)
-        {
-            if (i > 0)
-                close(in_fd);
-            if (i < num_comandos - 1)
-            {
-                close(fd[1]);
-                in_fd = fd[0];
-            }
-        }
-        else
-        {
-            perror("fork error");
-            return;
-        }
-    }
-    for (i = 0; i < num_comandos; i++) wait(NULL);
 }

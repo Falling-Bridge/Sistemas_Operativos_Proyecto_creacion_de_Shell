@@ -1,5 +1,19 @@
 #include "../include/Comando_pipes.h"
 
+/*
+ * ejecutar_pipes
+ * ----------------
+ * Ejecuta un pipeline de comandos separados por '|'.
+ *
+ * comandos: array de cadenas (cada elemento es un comando con sus args separados por espacios)
+ * num_comandos: cantidad de elementos válidos en `comandos`
+ *
+ * Para cada comando:
+ * - Crea un proceso hijo con fork
+ * - Redirige stdin y stdout según corresponda
+ * - Ejecuta el comando con execvp
+ * - El padre espera a todos los hijos
+ */
 void ejecutar_pipes(char *comandos[], int num_comandos)
 {
     int i;
@@ -20,8 +34,8 @@ void ejecutar_pipes(char *comandos[], int num_comandos)
         }
 
         pid = fork();
-        if (pid == 0)
-        { // hijo
+        if (pid == 0) // hijo
+        {
             if (i > 0)
             {
                 // Redirige entrada desde el pipe anterior
@@ -35,7 +49,8 @@ void ejecutar_pipes(char *comandos[], int num_comandos)
                 close(fd[1]);
                 close(fd[0]);
             }
-            // ===PARSEAR===
+
+            /* Parsear argumentos */
             char *args[256];
             char *token = strtok(comandos[i], " ");
             int j = 0;
@@ -50,12 +65,9 @@ void ejecutar_pipes(char *comandos[], int num_comandos)
             perror("error execvp");
             exit(1);
         }
-        else if (pid > 0)
-        { // PADRE
-            if (i > 0)
-            {
-                close(in_fd);
-            }
+        else if (pid > 0) // padre
+        {
+            if (i > 0) close(in_fd);
             if (i < num_comandos - 1)
             {
                 close(fd[1]);
@@ -69,9 +81,6 @@ void ejecutar_pipes(char *comandos[], int num_comandos)
         }
     }
 
-    // para esperar todos los procesos hijos:
-    for (i = 0; i < num_comandos; i++)
-    {
-        wait(NULL);
-    }
+    /* Esperar todos los procesos hijos */
+    for (i = 0; i < num_comandos; i++) wait(NULL);
 }

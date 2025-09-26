@@ -2,24 +2,31 @@ CC = gcc
 CFLAGS = -Wall -Wextra -Iinclude
 LDFLAGS = -lreadline
 SRCDIR = src
-SOURCES = $(SRCDIR)/Shell.c $(SRCDIR)/navegacion.c $(SRCDIR)/Comando_personalizado.c $(SRCDIR)/Comando_pipes.c
+OBJDIR = obj
+SOURCES = $(SRCDIR)/main.c $(SRCDIR)/navegacion.c $(SRCDIR)/Comando_personalizado.c $(SRCDIR)/Comando_pipes.c
+OBJECTS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SOURCES))
 TARGET = shell
 
-# Regla principal: compilar
+# Crear carpeta obj si no existe
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+# Regla principal: compilar todos los objetos y luego enlazar
 compile: $(TARGET)
 
-$(TARGET): $(SOURCES)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SOURCES) $(LDFLAGS)
+$(TARGET): $(OBJECTS)
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+# Compilar cada .c a .o, asegurando que obj exista
+$(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Regla: correr el programa
 run: $(TARGET)
 	./$(TARGET)
 
-# Regla: compilar y correr a la vez
-all: compile run
-
 # Limpiar archivos compilados
 clean:
-	rm -f $(TARGET)
+	rm -rf $(OBJDIR) $(TARGET)
 
-.PHONY: compile run all clean
+.PHONY: compile run clean
