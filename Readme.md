@@ -46,7 +46,7 @@ gcc -Wall -Wextra -Iinclude src/main.c src/navegacion.c src/Comando_personalizad
 ```
 Para ejecución 
 ```
-/main
+./main
 ```
 
 #### Compilación (Con Makefile)
