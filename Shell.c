@@ -7,8 +7,6 @@
 #include "Comando_personalizado.h"
 #include "Comando_pipes.h"
 
-void ejecutar_pipes(char *comandos[], int num_comandos);
-
 int main(int argc, char *argv[])
 {
     char escritura_comando[256]; // por la cantidad que admite un buffer
