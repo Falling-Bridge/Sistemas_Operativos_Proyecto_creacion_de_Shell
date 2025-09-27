@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     
         if (strcmp(comandos[0], "miprof") == 0)
         {
-            manejar_miprof(comandos);
+            manejar_miprof(*comandos[]);
             continue;
         }
     
