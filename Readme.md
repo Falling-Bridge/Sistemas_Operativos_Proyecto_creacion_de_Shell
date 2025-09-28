@@ -63,7 +63,7 @@ Para eliminar el ejecutable generado y los archivos de tipo .o en la carpeta 'ob
 make clean
 ```
  
-#### Manual de Uso.
+#### Modo de Uso.
 - Sintaxis Básica: $ [argumento1][argumento2] , algunos ejemplos de uso:
   * $ ls (navegación de archivos)
   * $ ls -la (navegación de archivos)
@@ -84,4 +84,32 @@ make clean
 * Por cada comando en el pipeline crea un pipe (excepto el último comando).
 * Proceso padre coordina la creación de pipes y espera la finalización de hijos.
 * Existe sincronización con el uso de wait() evitando procesos zombie.
+
+## Comando Personalizado miprof
+miprof sirve para ejecutar cualquier comando o programa mientras se miden sus tiempos de ejecución y consumo de memoria.
+**Métricas medidas:** 
+ * Tiempo total de ejecución o tiempo real.
+ * Tiempo de usuario
+ * Tiempo del sistema
+### Modo de uso.
+***Modo Básico***
+```
+miprof ejec <comando> [argumentos]
+```
+Ejemplo:
+```
+miprof ejec ls -la
+```
+***Modo con guardado***
+```
+miprof ejecsave <archivo_salida> <comando> [argumentos]
+```
+Ejemplo:
+```
+miprof ejecsave archivo.txt ls -la
+```
+
+
+
+
 
