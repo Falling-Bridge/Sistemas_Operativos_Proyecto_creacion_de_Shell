@@ -4,7 +4,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include "Comando_personalizado.h"
+#include "Comando_personalizado.c"
 
 void ejecutar_pipes(char *comandos[], int num_comandos);
 

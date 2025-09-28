@@ -1,4 +1,15 @@
-#include "Comando_personalizado.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/resource.h>
+#include <time.h>
+
+typedef struct {
+    double user_time;
+    double sys_time;
+    double real_time;
+} Resultados;
 
 void manejar_miprof(char **comandos)
 {
@@ -35,9 +46,12 @@ void manejar_miprof(char **comandos)
 void ejecutar_miprof(char **comandos, int tiempo_maximo){
         struct rusage usage_start, usage_end;
         struct timespec real_start, real_end;
-        double user_time, sys_time, real_time;
+        int status;
 
+        double user_time, sys_time, real_time;
         double start_time = get_time();
+        double end_time;
+
         int pid = fork();
 
         if (pid < 0) { // fork falló
