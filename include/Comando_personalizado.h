@@ -3,8 +3,14 @@
 
 #include "librerias.h"
 
+typedef struct{
+    double tiempo_usuario;
+    double tiempo_sistema;
+    double tiempo_real;
+    long memoria_maxima;} Resultados;
+
 void manejar_miprof(char **comandos);
-void ejecutar_miprof(char **args, int timeout, int guardar, const char *archivo);
-void guardar_resultados(const char *archivo, char **args);
+Resultados ejecutar_miprof(char **args, int timeout);
+void guardar_resultados(const char *archivo, char **args, Resultados result);
 
 #endif

@@ -4,7 +4,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include "Comando_personalizado.c"
+#include "Comando_personalizado.h"
 
 void ejecutar_pipes(char *comandos[], int num_comandos);
 
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     
         if (strcmp(comandos[0], "miprof") == 0)
         {
-            manejar_miprof(*comandos[]);
+            manejar_miprof(*comandos);
             continue;
         }
     
