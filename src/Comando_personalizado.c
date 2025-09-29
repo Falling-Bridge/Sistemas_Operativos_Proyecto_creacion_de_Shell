@@ -1,4 +1,3 @@
-#include "../include/Comando_personalizado.h"
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,19 +10,16 @@
 #include <signal.h>
 #include <errno.h>
 
-/*
- * Comando_personalizado.c
- * Implementaciones para el comando `miprof` usado en el shell.
- * - ejecutar_miprof: ejecuta un comando (posible extensión para medir tiempos/recursos)
- * - guardar_resultados: escribe métricas en un archivo
- * - manejar_miprof: interprete de la sub-sintaxis `miprof ...`
- *
- * Actualmente las mediciones (tiempo, memoria) están preparadas mediante
- * variables globales; la función ejecutar_miprof puede ampliarse para medir
- * y rellenar esas variables.
- */
+#define MAX_TOKENS 20
+#define MAX_LENGHT 256
 
-       
+typedef struct {
+    double tiempo_real;
+    double tiempo_usuario;
+    double tiempo_sistema;
+    long memoria_maxima;
+} Resultados;
+
 double get_time() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -31,12 +27,8 @@ double get_time() {
 }
 
 /* ejecutar_miprof
- *  - args: argv-like (args[0] comando, seguido de argumentos, NULL-terminated)
+ *  - comandos: argv-like (comandos[0] comando, seguido de argumentos, NULL-terminated)
  *  - timeout: tiempo máximo (no usado actualmente)
- *  - guardar: flag para indicar si hay que guardar resultados
- *  - archivo: ruta del archivo donde guardar si guardar != 0
- *
- * Implementación actual: simplemente fork/exec del comando y espera.
  */
 Resultados ejecutar_miprof(char **comandos, int timeout){
     Resultados result = {0};
@@ -44,24 +36,21 @@ Resultados ejecutar_miprof(char **comandos, int timeout){
 
     struct rusage usage;
     int status;
-
     double user_time, sys_time, real_time;
-
     double start_time = get_time();
     double end_time;
 
-
     int pid = fork();
 
-    if (pid < 0) { // fork falló
+    if (pid < 0) {
         perror("fork fallo\n");
         exit(1);
-    } else if (pid == 0) { // proceso hijo
+    } else if (pid == 0) {
         execvp(comandos[0], comandos);
         perror("execvp fallo");
         exit(1);
     }
-    else { // proceso padre
+    else {
         wait4(pid, &status, 0, &usage);
         end_time = get_time();
     }
@@ -78,12 +67,17 @@ Resultados ejecutar_miprof(char **comandos, int timeout){
     return result;
 }
 
-
 void guardar_resultados(const char *archivo, char **args, Resultados result) {
     FILE *f = fopen(archivo, "a");
-    if (!f) { perror("Error al abrir archivo para guardar resultados"); return; }
+    if (!f) { 
+        perror("Error al abrir archivo para guardar resultados"); 
+        return; 
+    }
     fprintf(f, "--- Ejecución miprof ---\n");
-    fprintf(f, "Comando: "); for (int i = 0; args[i] != NULL; i++) fprintf(f, "%s ", args[i]); fprintf(f, "\n");
+    fprintf(f, "Comando: "); 
+    for (int i = 0; args[i] != NULL; i++) 
+        fprintf(f, "%s ", args[i]); 
+    fprintf(f, "\n");
     fprintf(f, "Tiempo real: %.6f s\n", result.tiempo_real);
     fprintf(f, "Tiempo usuario: %.6f s\n", result.tiempo_usuario);
     fprintf(f, "Tiempo sistema: %.6f s\n", result.tiempo_sistema);
@@ -92,8 +86,43 @@ void guardar_resultados(const char *archivo, char **args, Resultados result) {
     printf("Resultados guardados en %s\n", archivo);
 }
 
+/* parsing_miprof
+ * Parsea el string de comando completo en tokens separados por espacios
+ * Retorna el número de tokens encontrados
+ */
+int parsing_miprof(char *comando_completo, char *tokens[MAX_TOKENS]) {
+    int token_count = 0;
+    char comando_copia[512];
+    
+    // Hacer copia porque strtok modifica el string
+    strncpy(comando_copia, comando_completo, sizeof(comando_copia) - 1);
+    comando_copia[sizeof(comando_copia) - 1] = '\0';
+    
+    // Tokenizar por espacios
+    char *token = strtok(comando_copia, " ");
+    
+    while (token != NULL && token_count < MAX_TOKENS) {
+        // Asignar el puntero directamente (apunta a comando_copia)
+        // PROBLEMA: comando_copia es local, se perderá al salir
+        // SOLUCIÓN: Usar un buffer estático o hacer copias
+        
+        // Opción 1: Usar buffer estático (más simple)
+        static char buffer[MAX_TOKENS][MAX_LENGHT];
+        strncpy(buffer[token_count], token, MAX_LENGHT - 1);
+        buffer[token_count][MAX_LENGHT - 1] = '\0';
+        tokens[token_count] = buffer[token_count];
+        
+        token_count++;
+        token = strtok(NULL, " ");
+    }
+    
+    tokens[token_count] = NULL;  // Terminar con NULL
+    return token_count;
+}
+
 /* manejar_miprof
- *  - comandos: array de cadenas donde comandos[0]=="miprof"
+ *  - comandos: array donde comandos[0] contiene el string completo
+ *              ejemplo: comandos[0] = "miprof ejec ls -la"
  *
  * Sintaxis admitida:
  *  - miprof ejec comando args
@@ -101,36 +130,80 @@ void guardar_resultados(const char *archivo, char **args, Resultados result) {
  *  - miprof ejecutar <tiempo> comando args
  */
 void manejar_miprof(char **comandos) {
-     /* Parsear argumentos */
-    printf("DEBUG: args[0] = '%s'\n", comandos[0]);
-
-    if (comandos[1] == NULL) { printf("Uso: miprof <ejec|ejecsave archivo|ejecutar tiempo> comando args\n"); return; }
-    char *modo = comandos[1];
-
+    char *tokens[MAX_TOKENS];
+    int num_tokens;
+    
+    // Parsear el comando completo que viene en comandos[0]
+    num_tokens = parsing_miprof(comandos[0], tokens);
+    
+    if (num_tokens < 2) {
+        printf("Uso: miprof <ejec|ejecsave archivo|ejecutar tiempo> comando args\n");
+        return;
+    }
+    
+    // tokens[0] = "miprof"
+    // tokens[1] = modo (ejec, ejecsave, ejecutar)
+    // tokens[2...] = resto de argumentos
+    
+    char *modo = tokens[1];
+    
     if (strcmp(modo, "ejec") == 0) {
         // miprof ejec comando args
-        ejecutar_miprof(&comandos[2], 0);
+        if (tokens[2] == NULL) {
+            printf("Debe especificar un comando\n");
+            return;
+        }
+        
+        Resultados result = ejecutar_miprof(&tokens[2], 0);
+        
+        // Mostrar resultados
+        printf("\n=== Resultados de ejecución ===\n");
+        printf("Tiempo real: %.6f s\n", result.tiempo_real);
+        printf("Tiempo usuario: %.6f s\n", result.tiempo_usuario);
+        printf("Tiempo sistema: %.6f s\n", result.tiempo_sistema);
+        printf("Memoria máxima: %ld KB\n", result.memoria_maxima);
     }
     else if (strcmp(modo, "ejecsave") == 0) {
         // miprof ejecsave archivo comando args
-        if (comandos[2] == NULL) {
+        if (tokens[2] == NULL) {
             printf("Debe especificar archivo\n");
             return;
         }
-        char *archivo = comandos[2];
-        Resultados result = ejecutar_miprof(&comandos[3], 0);
-        guardar_resultados(archivo, &comandos[3], result);
+        if (tokens[3] == NULL) {
+            printf("Debe especificar comando\n");
+            return;
+        }
+        
+        char *archivo = tokens[2];
+        Resultados result = ejecutar_miprof(&tokens[3], 0);
+        guardar_resultados(archivo, &tokens[3], result);
+        
+        // También mostrar en pantalla
+        printf("\n=== Resultados de ejecución ===\n");
+        printf("Tiempo real: %.6f s\n", result.tiempo_real);
+        printf("Tiempo usuario: %.6f s\n", result.tiempo_usuario);
+        printf("Tiempo sistema: %.6f s\n", result.tiempo_sistema);
+        printf("Memoria máxima: %ld KB\n", result.memoria_maxima);
     }
     else if (strcmp(modo, "ejecutar") == 0) {
         // miprof ejecutar <tiempo> comando args
-        if (comandos[2] == NULL || comandos[3] == NULL) {
+        if (tokens[2] == NULL || tokens[3] == NULL) {
             printf("Uso correcto: miprof ejecutar <tiempo_max> comando args\n");
             return;
         }
-        int timeout = atoi(comandos[2]);
-        ejecutar_miprof(&comandos[3], timeout);
+        
+        int timeout = atoi(tokens[2]);
+        Resultados result = ejecutar_miprof(&tokens[3], timeout);
+        
+        // Mostrar resultados
+        printf("\n=== Resultados de ejecución (timeout: %d s) ===\n", timeout);
+        printf("Tiempo real: %.6f s\n", result.tiempo_real);
+        printf("Tiempo usuario: %.6f s\n", result.tiempo_usuario);
+        printf("Tiempo sistema: %.6f s\n", result.tiempo_sistema);
+        printf("Memoria máxima: %ld KB\n", result.memoria_maxima);
     }
     else {
         printf("Modo no reconocido: %s\n", modo);
+        printf("Modos válidos: ejec, ejecsave, ejecutar\n");
     }
 }
