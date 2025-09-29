@@ -12,5 +12,6 @@ typedef struct{
 void manejar_miprof(char **comandos);
 Resultados ejecutar_miprof(char **args, int timeout);
 void guardar_resultados(const char *archivo, char **args, Resultados result);
+void parsing_miprof(char **comandos);
 
 #endif
